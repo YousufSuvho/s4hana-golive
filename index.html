@@ -126,7 +126,7 @@ html,body{width:100vw;height:100vh;overflow:hidden;background:#000;font-family:'
 .ring-section{
   position:relative;
   display:flex;align-items:center;justify-content:center;
-  width:clamp(190px,65%,270px);
+  width:clamp(210px,72%,300px);
   aspect-ratio:1;
   animation:aFadeIn .9s .12s ease both;
   flex-shrink:0;
@@ -145,13 +145,13 @@ html,body{width:100vw;height:100vh;overflow:hidden;background:#000;font-family:'
 .ring-label-top{font-size:clamp(7px,2vw,10px);letter-spacing:4px;color:var(--w30);text-transform:uppercase;font-weight:600;margin-bottom:-4px;}
 .ring-number{
   font-family:'Bebas Neue',sans-serif;
-  font-size:clamp(60px,20vw,110px);
+  font-size:clamp(65px,22vw,120px);
   line-height:.88;color:#fff;
   text-shadow:0 0 20px rgba(255,255,255,0.18),0 0 60px rgba(232,25,44,0.7),0 0 110px rgba(180,0,0,0.35);
 }
 .ring-number.urgent{color:var(--red2);animation:urgP .9s ease-in-out infinite;}
 @keyframes urgP{0%,100%{transform:scale(1);}50%{transform:scale(1.06);}}
-.ring-label-bot{font-family:'Bebas Neue',sans-serif;font-size:clamp(11px,4vw,20px);letter-spacing:9px;color:var(--w30);margin-top:-2px;}
+.ring-label-bot{font-family:'Bebas Neue',sans-serif;font-size:clamp(10px,3vw,16px);letter-spacing:5px;color:var(--w60);margin-top:6px;text-align:center;text-shadow:0 0 10px rgba(232,25,44,0.5);}
 
 /* ── PROGRESS ── */
 .prog-section{width:100%;animation:aFadeUp .8s .18s ease both;}
@@ -323,11 +323,10 @@ html,body{width:100vw;height:100vh;overflow:hidden;background:#000;font-family:'
     <div class="ring-section">
       <canvas id="ringCanvas"></canvas>
       <div class="ring-center">
-        <div class="ring-label-top">Go-Live In</div>
         <div class="ring-number" id="bigNum">20</div>
-        <div class="ring-label-bot">DAYS</div>
       </div>
     </div>
+    <div class="ring-label-bot">DAYS TO GO LIVE</div>
 
     <!-- PROGRESS -->
     <div class="prog-section">
@@ -419,13 +418,14 @@ const ringSection = document.querySelector('.ring-section');
 function drawRing() {
   const size = ringSection.offsetWidth;
   if (!size) return;
-  canvas.width = size * 2;
-  canvas.height = size * 2;
-  canvas.style.width = size + 'px';
-  canvas.style.height = size + 'px';
-
+  canvas.width = size * 2; canvas.height = size * 2;
+  canvas.style.width = size + 'px'; canvas.style.height = size + 'px';
   const ctx = canvas.getContext('2d');
-  const cx = size, cy = size, r1 = size * 0.88, r2 = size * 0.78, r3 = size * 0.72;
+  const cx = size, cy = size;
+  const r1 = size * 0.88;  // outer tick ring
+  const r2 = size * 0.76;  // progress arc
+  const r3 = size * 0.70;  // inner dashed
+  const rLabel = size * 0.98; // label radius
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -436,11 +436,11 @@ function drawRing() {
   ctx.lineWidth = 2;
   ctx.stroke();
 
-  // Tick marks
+  // Tick marks (60 ticks)
   for (let i = 0; i < 60; i++) {
     const angle = (i / 60) * Math.PI * 2 - Math.PI / 2;
     const isMajor = i % 5 === 0;
-    const len = isMajor ? 12 : 6;
+    const len = isMajor ? 14 : 6;
     const x1 = cx + Math.cos(angle) * r1;
     const y1 = cy + Math.sin(angle) * r1;
     const x2 = cx + Math.cos(angle) * (r1 - len * 2);
@@ -448,23 +448,48 @@ function drawRing() {
     ctx.beginPath();
     ctx.moveTo(x1, y1);
     ctx.lineTo(x2, y2);
-    ctx.strokeStyle = isMajor ? 'rgba(232,25,44,0.65)' : 'rgba(232,25,44,0.22)';
+    ctx.strokeStyle = isMajor ? 'rgba(232,25,44,0.7)' : 'rgba(232,25,44,0.22)';
     ctx.lineWidth = isMajor ? 2.5 : 1;
     ctx.stroke();
   }
 
-  // Progress arc
-  const arcEnd = (pct / 100) * Math.PI * 2 - Math.PI / 2;
-  const startAngle = -Math.PI / 2;
+  // % legend labels at 0%, 10%, 20% ... 100%
+  // 0% = top (angle -90deg), going clockwise
+  // 11 labels: 0,10,20,30,40,50,60,70,80,90,100
+  const labels = ['0%','10%','20%','30%','40%','50%','60%','70%','80%','90%','100%'];
+  ctx.font = `bold ${Math.round(size * 0.11)}px 'Rajdhani', sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  for (let i = 0; i < labels.length; i++) {
+    // spread 11 labels over full 360deg starting at top
+    const angle = (i / 10) * Math.PI * 2 - Math.PI / 2;
+    const lx = cx + Math.cos(angle) * rLabel;
+    const ly = cy + Math.sin(angle) * rLabel;
+    // highlight labels that are "elapsed"
+    const labelPct = i * 10;
+    const isElapsed = labelPct <= pct;
+    ctx.fillStyle = isElapsed ? 'rgba(232,25,44,0.95)' : 'rgba(255,255,255,0.25)';
+    if (isElapsed) {
+      ctx.shadowColor = 'rgba(232,25,44,0.8)';
+      ctx.shadowBlur = 8;
+    } else {
+      ctx.shadowBlur = 0;
+    }
+    ctx.fillText(labels[i], lx, ly);
+    ctx.shadowBlur = 0;
+  }
 
-  // Track
+  // Progress arc track
   ctx.beginPath();
   ctx.arc(cx, cy, r2, 0, Math.PI * 2);
   ctx.strokeStyle = 'rgba(255,255,255,0.04)';
   ctx.lineWidth = 12;
   ctx.stroke();
 
+  // Filled progress arc
   if (pct > 0) {
+    const startAngle = -Math.PI / 2;
+    const arcEnd = (pct / 100) * Math.PI * 2 - Math.PI / 2;
     ctx.beginPath();
     ctx.arc(cx, cy, r2, startAngle, arcEnd);
     ctx.strokeStyle = '#e8192c';
@@ -475,6 +500,7 @@ function drawRing() {
     ctx.stroke();
     ctx.shadowBlur = 0;
 
+    // Glow dot at arc tip
     const tipX = cx + Math.cos(arcEnd) * r2;
     const tipY = cy + Math.sin(arcEnd) * r2;
     ctx.beginPath();
